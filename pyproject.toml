@@ -1,0 +1,98 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eFilter"
+dynamic = ["version"]
+maintainers = [{ name = "Adam Bess", email = "bess@deepdrug.ai" }]
+description = 'Filter synthesized molecules by properties, pathways and predicted targets.'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = [
+  "molecule",
+  "physical properties",
+  "pathway prediction",
+  "classification",
+  "target prediction",   # eTarget?
+  "bioinformatics",
+]
+authors = [
+  { name = "bessx", email = "1159066+bessx@users.noreply.github.com" },
+  { name = "Adam Bess", email = "bess@deepdrug.ai" },
+  { name = "Chris Alvins", email = "calvin@deepdrug.ai" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Chemistry",
+]
+#FIXME: Do we need this to have pytest?
+dependencies = ["numpy<2", "rdkit", "colorlog", "pytest"]
+# dependencies = ["numpy<2", "rdkit", "colorlog", "networkx", "matplotlib"]
+
+[project.urls]
+Homepage = "https://deepdrug.ai"
+Documentation = "https://github.com/deepdrugai/eFilter#readme"
+# Documentation = "https://readthedocs.org"
+Issues = "https://github.com/deepdrugai/eFilter/issues"
+Source = "https://github.com/deepdrugai/eFilter"
+Repository = "https://github.com/deepdrugai/eFilter"
+"Bug Tracker" = "https://github.com/deepdrugai/eFilter/issues"
+Changelog = "https://github.com/deepdrugai/eFilter/blob/master/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/efilter2/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/efilter2"]
+
+[tool.hatch.envs.dev]
+dependencies = ["pytest", "pytest-cov", "pyright"]
+[tool.hatch.envs.dev.scripts]
+typ = "pyright"
+types = "pyright --stats"
+typesskip = "pyright --stats --skipunannotated"
+
+[tool.pyright]
+include = ["src/efilter2", "tests"]
+
+[tool.coverage.run]
+source_pkgs = ["efilter", "tests"]
+branch = true
+parallel = true
+omit = ["src/efilter2/__about__.py"]
+
+[tool.coverage.paths]
+efilter = ["src/efilter2", "*/eFilter/src/efilter2"]
+tests = ["tests", "*/efilter2/tests"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+
+[project.scripts]
+efilter = "efilter.eFilter:main"
+efilter2 = "eFilter.eFilter:main"
+efilter3 = "efilter2.eFilter:main"
+
+[tool.ruff]
+line-length = 142
+
+[tool.ruff.lint]
+ignore = ["N", "SLF", "F541", "BLE001", "EM", "TRY0", "FBT", "PLR2004", "T20"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
