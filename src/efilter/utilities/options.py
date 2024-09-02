@@ -55,9 +55,8 @@ class Options:
         #
         # eFilter arguments
         #
-        parser.add_argument("-" + INPUT_ARG, type=str, help="Input path to molecules to analyze.", required=True)
-
-        parser.add_argument("-d", dest="debug", action="store_true", help="Quick flag to set logging level to debug.")
+        parser.add_argument("-" + INPUT_ARG[0], "--" + INPUT_ARG, type=str, help="Input path to molecules to analyze.", required=True)
+        parser.add_argument("-d", "--debug", dest="debug", action="store_true", help="Quick flag to set logging level to debug.")
 
         parser.add_argument(
             "-l",
@@ -79,13 +78,6 @@ class Options:
         if args.logLevel == "NOTSET":
             log.disabled = True
 
-        # CTA: Level-Based Reconstruction 1/26/2024
-        # Type of reconstruction to perform
-        # if args.direct:
-        #     self.DIRECT = True
-        # if args.level_based:
-        #     self.LEVEL_BASED = True
-
         return args
 
     def _interpret_args(self, arg_env) -> None:
@@ -95,39 +87,11 @@ class Options:
 
             if arg == INPUT_ARG:
                 input_path = getattr(arg_env, arg)
-                if Path(input_path).exists():
-                    if not Path(input_path).is_dir():
-                        log.warning(f"Input path {input_path} is not a directory. Did you mean: {Path(input_path).parent}?")
-                        input_path = Path(input_path).parent
-                else:
+                if not Path(input_path).exists():
                     log.error(f"Input path does not exist: {input_path}.")
                     raise FileNotFoundError(f"Input path does not exist: {input_path}.")
 
                 self.INPUT_PATH = Path(input_path)
-
-            elif arg == OUTPUT_ARG:
-                self.OUTPUT_PATH = getattr(arg_env, arg)
-
-            elif arg == RECONSTRUCTION_FILE_ARG:
-                self.RECONSTRUCTION_FILE = getattr(arg_env, arg)
-                if not self.RECONSTRUCTION_FILE:
-                    log.debug("Reconstruction file not provided.")
-
-                    # If the reconstruction file is None, search for it in the input directory
-                    log.debug(f"Searching for reconstruction file in input ({self.INPUT_PATH}) directory...")
-                    t_list = list(self.INPUT_PATH.glob("t-*"))
-                    # log.debug(f"Reconstruction file{'s'[:len(t_list)^1]} found: {','.join(str(p) for p in t_list)}.")
-
-                    # If no trace file or multiple trace files found, log error
-                    if len(t_list) != 1:
-                        log.error(f"Error identifying reconstruction file.")
-                        return
-
-                    # Set the reconstruction file to the first and only file found
-                    self.RECONSTRUCTION_FILE = t_list[0]
-
-                self.RECONSTRUCTION_FILE = Path(self.RECONSTRUCTION_FILE)
-                log.info(f"Reconstruction file found: {self.RECONSTRUCTION_FILE}")
 
     def __str__(self):
         """
