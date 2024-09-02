@@ -31,28 +31,31 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Topic :: Scientific/Engineering :: Bio-Informatics",
-  "Topic :: Scientific/Engineering :: Chemistry",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
 ]
-#FIXME: Do we need this to have pytest?
-dependencies = ["numpy<2", "rdkit", "colorlog", "pytest"]
-# dependencies = ["numpy<2", "rdkit", "colorlog", "networkx", "matplotlib"]
+dependencies = [
+  "numpy<2",
+  "rdkit",
+  "colorlog",
+  "pytest",
+  "tensorflow",
+  "xgboost",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov"]
+types = ["pyright"]
 
 [project.urls]
-Homepage = "https://deepdrug.ai"
-Documentation = "https://github.com/deepdrugai/eFilter#readme"
-# Documentation = "https://readthedocs.org"
-Issues = "https://github.com/deepdrugai/eFilter/issues"
-Source = "https://github.com/deepdrugai/eFilter"
-Repository = "https://github.com/deepdrugai/eFilter"
-"Bug Tracker" = "https://github.com/deepdrugai/eFilter/issues"
-Changelog = "https://github.com/deepdrugai/eFilter/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/deepdrugai/efilter#readme"
+Issues = "https://github.com/deepdrugai/efilter/issues"
+Source = "https://github.com/deepdrugai/efilter"
 
 [tool.hatch.version]
-path = "src/efilter2/__about__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/efilter2"]
+path = "src/efilter/__about__.py"
 
 [tool.hatch.envs.dev]
 dependencies = ["pytest", "pytest-cov", "pyright"]
@@ -62,25 +65,23 @@ types = "pyright --stats"
 typesskip = "pyright --stats --skipunannotated"
 
 [tool.pyright]
-include = ["src/efilter2", "tests"]
+include = ["src/efilter", "tests"]
 
 [tool.coverage.run]
 source_pkgs = ["efilter", "tests"]
 branch = true
 parallel = true
-omit = ["src/efilter2/__about__.py"]
+omit = ["src/efilter/__about__.py"]
 
 [tool.coverage.paths]
-efilter = ["src/efilter2", "*/eFilter/src/efilter2"]
-tests = ["tests", "*/efilter2/tests"]
+efilter = ["src/efilter", "*/eFilter/src/efilter"]
+tests = ["tests", "*/efilter/tests"]
 
 [tool.coverage.report]
 exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [project.scripts]
 efilter = "efilter.eFilter:main"
-efilter2 = "eFilter.eFilter:main"
-efilter3 = "efilter2.eFilter:main"
 
 [tool.ruff]
 line-length = 142

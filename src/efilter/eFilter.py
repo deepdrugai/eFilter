@@ -47,7 +47,7 @@ def main():
     if not molecules:
         log.error(f"No molecules were found in {mol_files_string}.")
         return
-    log.info(f"{len(molecules)} molecule{'s'[:len(molecules) ^ 1]} to be chopped: {molecules_string}.")
+    log.info(f"{len(molecules)} molecule{'s'[:len(molecules) ^ 1]} to be analyzed: {molecules_string}.")
 
     # RUN MODELS HERE
     # Example SMILES strings
@@ -124,6 +124,7 @@ def getFiles(options):
         log.info(f"Input path {options.INPUT_PATH} is not a directory. Did you mean: '{folderPath.parent}/'?")
         current_file = folderPath
         folderPath = folderPath.parent
+        log.error(f"??? {current_file}")
         # if the file extension is not a supportedd format, add the file to the bad file list, otherwise add it to the file list
         extension = current_file.suffix
         if extension in constants.ACCEPTED_FORMATS:
