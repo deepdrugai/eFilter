@@ -97,3 +97,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = false
 docstring-code-line-length = "dynamic"
+
+# Fix dynamic vs static import issues (efilter.* vs eFilter.src.efilter.*)
+[tool.hatch.build]
+packages = [{ include = "efilter", from = "src" }]
