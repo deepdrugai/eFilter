@@ -2,8 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from eFilter.src.efilter.utilities.logging import log
-
+from efilter.utilities.logging import log
 
 # Arg     Explanation
 # ---     ---------------------------------------

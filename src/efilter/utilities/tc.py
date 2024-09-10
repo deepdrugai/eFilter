@@ -5,8 +5,8 @@ from rdkit import (
     DataStructs,  # For TC Computations
 )
 
-from eFilter.src.efilter.representation import Molecule
-from eFilter.src.efilter.utilities.logging import log
+from efilter.representation import Molecule
+from efilter.utilities.logging import log
 
 
 #

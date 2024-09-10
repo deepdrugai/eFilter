@@ -2,8 +2,8 @@
 # The molecule class will contain the rdkit object, the name of the file it came from, as well as a list of 'equal other fragments'.
 #
 
-from eFilter.src.efilter.utilities import constants, tc
-from eFilter.src.efilter.utilities.logging import log
+from efilter.utilities import constants, tc
+from efilter.utilities.logging import log
 
 
 class Molecule:

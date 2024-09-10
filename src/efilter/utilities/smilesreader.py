@@ -1,5 +1,4 @@
-from eFilter.src.efilter.utilities.logging import log
-
+from efilter.utilities.logging import log
 
 #
 # We will handle two formats for SMILES; these formats can be intermixed
