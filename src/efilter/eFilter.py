@@ -10,6 +10,15 @@ from efilter.utilities.logging import log
 from efilter.utilities.options import Options
 
 
+# Function to convert SMILES to fingerprint
+# def smiles_to_fp(smiles, n_bits=2048):
+def smiles_to_fp(smiles, n_bits=1024):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is not None:
+        return np.array(AllChem.GetMorganFingerprintAsBitVect(mol, 2, n_bits))
+    return np.zeros((n_bits,))  # Return a zero array if the SMILES is invalid
+
+
 def main():
     """
     eFilter
@@ -24,8 +33,6 @@ def main():
     # if not options.isRunnable():
     #     log.error(f'Command-line arguments failed to parse; execution of eMolFrag will stop.')
     #     return
-
-    # Verify Tools and Parse Command Line
 
     # Get files
     mol_files = getFiles(options)
@@ -61,6 +68,17 @@ def main():
         import tensorflow as tf
         from tensorflow.keras.models import Model  # type: ignore
 
+        tf.config.run_functions_eagerly(True)
+        tf.data.experimental.enable_debug_mode()
+
+        # Define the prediction function
+        @tf.function(reduce_retracing=True)
+        def predict_with_model(model, X_smiles):
+            intermediate_layer_model = Model(inputs=model.input, outputs=model.layers[-2].output)
+            # intermediate_layer_model.predict(X_smiles)
+            # TODO: Run XGBoost model here on intermediate_layer_model
+            return model.predict(X_smiles)
+
     # Process each SMILES string
     for mol in molecules:
         smi = Chem.MolToSmiles(mol)
@@ -75,19 +93,28 @@ def main():
 
         results[smi] = {}
 
+        # if not isinstance(X_smiles, tf.Tensor):
+        #     X_smiles = tf.convert_to_tensor(X_smiles)
+        # log.info(f"X_smiles type: {type(X_smiles)}, shape: {X_smiles.shape}")
+
         for model_file in model_files:
             model_path = os.path.join(models_dir, model_file)
             model_name = model_file.replace(".keras", "")
 
             if os.path.exists(model_path):
+                log.info(f"Processing model: {model_name}")
                 best_nn_model = tf.keras.models.load_model(model_path)
 
-                # Predict intermediate features
-                intermediate_layer_model = Model(inputs=best_nn_model.input, outputs=best_nn_model.layers[-2].output)
-                intermediate_layer_model.predict(X_smiles)
+                # # Predict intermediate features
+                # intermediate_layer_model = Model(inputs=best_nn_model.input, outputs=best_nn_model.layers[-2].output)
+                # intermediate_layer_model.predict(X_smiles)
 
-                nn_predictions = best_nn_model.predict(X_smiles)
-                results[smi][model_name] = {"NN Prediction": nn_predictions.flatten()[0]}
+                # nn_predictions = best_nn_model.predict(X_smiles)
+                # results[smi][model_name] = {"NN Prediction": nn_predictions.flatten()[0]}
+
+                # Predict using the defined function
+                nn_predictions = predict_with_model(best_nn_model, X_smiles)
+                results[smi][model_name] = nn_predictions.flatten()[0]
 
             else:
                 results[smi][model_name] = "Model file not found"
@@ -105,15 +132,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# Function to convert SMILES to fingerprint
-# def smiles_to_fp(smiles, n_bits=2048):
-def smiles_to_fp(smiles, n_bits=1024):
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is not None:
-        return np.array(AllChem.GetMorganFingerprintAsBitVect(mol, 2, n_bits))
-    return np.zeros((n_bits,))  # Return a zero array if the SMILES is invalid
 
 
 def getFiles(options):
