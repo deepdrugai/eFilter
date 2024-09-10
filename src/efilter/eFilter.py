@@ -1,17 +1,13 @@
 import os
-import numpy as np
+from pathlib import Path
 
-# import tensorflow as tf
-# from tensorflow.keras.models import Model
+import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from eFilter.src.efilter.utilities.logging import log
-from eFilter.src.efilter.utilities.options import Options
-
-from pathlib import Path
-
-from eFilter.src.efilter.utilities import constants, moleculereader
+from efilter.utilities import constants, moleculereader
+from efilter.utilities.logging import log
+from efilter.utilities.options import Options
 
 
 def main():
@@ -44,6 +40,8 @@ def main():
     # Get molecules
     molecules = moleculereader.getMolecules(mol_files)
     molecules_string = ", ".join([str(m).split(" ")[0] for m in molecules])
+    molecules = [m.getRDKitObject() for m in molecules]
+
     if not molecules:
         log.error(f"No molecules were found in {mol_files_string}.")
         return
@@ -51,17 +49,29 @@ def main():
 
     # RUN MODELS HERE
     # Example SMILES strings
-    smiles = ["C1=CC=CC=C1", "CC(C)C", "O=C(O)C(Br)Cl"]
+    # smiles = ["C1=CC=CC=C1", "CC(C)C", "O=C(O)C(Br)Cl"]
 
     models_dir = "src/efilter/models"
     model_files = [f for f in os.listdir(models_dir) if f.endswith(".keras")]
 
     results = {}
 
+    if molecules:
+        log.error(f"molecules found: {molecules}.")
+        import tensorflow as tf
+        from tensorflow.keras.models import Model  # type: ignore
+
     # Process each SMILES string
-    for smi in smiles:
+    for mol in molecules:
+        smi = Chem.MolToSmiles(mol)
         X_smiles = smiles_to_fp(smi)
-        X_smiles = X_smiles.reshape(1, -1)
+
+        log.info(f"X_smiles shape: {X_smiles.shape}")
+        # X_smiles = X_smiles.reshape(1, -1)
+
+        if X_smiles.ndim == 1:
+            X_smiles = X_smiles.reshape(1, -1)
+            log.warning(f"X_smiles re-shaped: {X_smiles.shape}")
 
         results[smi] = {}
 
@@ -74,7 +84,7 @@ def main():
 
                 # Predict intermediate features
                 intermediate_layer_model = Model(inputs=best_nn_model.input, outputs=best_nn_model.layers[-2].output)
-                intermediate_features = intermediate_layer_model.predict(X_smiles)
+                intermediate_layer_model.predict(X_smiles)
 
                 nn_predictions = best_nn_model.predict(X_smiles)
                 results[smi][model_name] = {"NN Prediction": nn_predictions.flatten()[0]}
@@ -98,12 +108,12 @@ if __name__ == "__main__":
 
 
 # Function to convert SMILES to fingerprint
-def smiles_to_fp(smiles, n_bits=2048):
+# def smiles_to_fp(smiles, n_bits=2048):
+def smiles_to_fp(smiles, n_bits=1024):
     mol = Chem.MolFromSmiles(smiles)
     if mol is not None:
         return np.array(AllChem.GetMorganFingerprintAsBitVect(mol, 2, n_bits))
-    else:
-        return np.zeros((n_bits,))  # Return a zero array if the SMILES is invalid
+    return np.zeros((n_bits,))  # Return a zero array if the SMILES is invalid
 
 
 def getFiles(options):
