@@ -31,7 +31,7 @@ class Options:
         After parsing the input command-line or configuration file,
         do we have the minimum requirements to execute?
         """
-        return any([self.INPUT_PATH, self.RECONSTRUCTION_FILE])
+        return any([self.INPUT_PATH])
         # self.OUTPUT_PATH is not None or \
 
     def _parse_command_line_args(self):
@@ -96,6 +96,4 @@ class Options:
         """
         Report the current preferences for each option available
         """
-        return f"Input Path: {self.INPUT_PATH}\n\
-                Output Path: {self.OUTPUT_PATH}\n\
-                Reconstruction file: {self.RECONSTRUCTION_FILE}\n"
+        return f"Input Path: {self.INPUT_PATH}"
