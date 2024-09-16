@@ -50,6 +50,8 @@ def main():
     mol_files_string = ", ".join([str(m.name) for m in mol_files])
     log.info(f"{len(mol_files)} file{'s'[:len(mol_files) ^ 1]} to be processed: {mol_files_string}.")
 
+    log.info(f"Writing csv output to: {options.OUTPUT_PATH}.")
+
     # Get molecules
     molecules = moleculereader.getMolecules(mol_files)
     molecules_string = ", ".join([str(m).split(" ")[0] for m in molecules])
@@ -74,6 +76,7 @@ def main():
 
     import tensorflow as tf
     from keras.api.models import Model, load_model
+    import csv
 
     tf.config.run_functions_eagerly(True)
     tf.data.experimental.enable_debug_mode()
@@ -137,6 +140,28 @@ def main():
     # Extract the model names from the first molecule's predictions
     model_names = list(results[next(iter(results))].keys())
 
+    # Define the output file path
+    output_file = options.OUTPUT_PATH
+    # "results.csv"
+
+    # Create the directory structure if it doesn't exist
+    output_dir = os.path.dirname(output_file)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Write the results to the CSV file
+    with open(output_file, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write the header row
+        header = ["SMILES"] + model_names
+        writer.writerow(header)
+
+        # Write the data rows
+        for smi, preds in results.items():
+            row = [smi] + [preds[model] for model in model_names]
+            writer.writerow(row)
+
+    print(f"Results saved to {output_file}.")
 
 
 if __name__ == "__main__":
