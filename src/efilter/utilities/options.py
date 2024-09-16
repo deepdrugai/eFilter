@@ -11,7 +11,9 @@ from efilter.utilities.logging import log
 # -d      log level: debug
 
 INPUT_ARG = "input"
+OUTPUT_ARG = "output"
 LOGGING_ARG = "loglevel"
+DEFAULT_OUTPUT_PATH = "output/results.csv"
 
 
 class Options:
@@ -19,6 +21,7 @@ class Options:
 
     def __init__(self):
         self.INPUT_PATH: Path
+        self.OUTPUT_PATH: Path
 
         arg_env = self._parse_command_line_args()
         if arg_env is None:
@@ -32,7 +35,7 @@ class Options:
         do we have the minimum requirements to execute?
         """
         return any([self.INPUT_PATH])
-        # self.OUTPUT_PATH is not None or \
+        # self.OUTPUT_PATH is not None
 
     def _parse_command_line_args(self):
         """
@@ -55,6 +58,13 @@ class Options:
         # eFilter arguments
         #
         parser.add_argument("-" + INPUT_ARG[0], "--" + INPUT_ARG, type=str, help="Input path to molecules to analyze.", required=True)
+        parser.add_argument(
+            "-" + OUTPUT_ARG[0],
+            "--" + OUTPUT_ARG,
+            type=str,
+            help=f'Output directory and filename for the resulting csv file. Default output path is "{DEFAULT_OUTPUT_PATH}".',
+            default=DEFAULT_OUTPUT_PATH,
+        )
         parser.add_argument("-d", "--debug", dest="debug", action="store_true", help="Quick flag to set logging level to debug.")
 
         parser.add_argument(
@@ -91,6 +101,10 @@ class Options:
                     raise FileNotFoundError(f"Input path does not exist: {input_path}.")
 
                 self.INPUT_PATH = Path(input_path)
+
+            if arg == OUTPUT_ARG:
+                output_path = getattr(arg_env, arg)
+                self.OUTPUT_PATH = Path(output_path)
 
     def __str__(self):
         """
