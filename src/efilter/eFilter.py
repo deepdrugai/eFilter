@@ -3,7 +3,13 @@ from pathlib import Path
 
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import AllChem
+
+# from rdkit.Chem import AllChem
+# from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
+
+from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
+
+# import tensorflow as tf  # Add this line
 
 from efilter.utilities import constants, moleculereader
 from efilter.utilities.logging import log
@@ -15,7 +21,7 @@ from efilter.utilities.options import Options
 def smiles_to_fp(smiles, n_bits=1024):
     mol = Chem.MolFromSmiles(smiles)
     if mol is not None:
-        return np.array(AllChem.GetMorganFingerprintAsBitVect(mol, 2, n_bits))
+        return np.array(GetMorganFingerprintAsBitVect(mol, 2, n_bits))
     return np.zeros((n_bits,))  # Return a zero array if the SMILES is invalid
 
 
@@ -64,21 +70,21 @@ def main():
 
     results = {}
 
-    if molecules:
-        log.error(f"molecules found: {molecules}.")
-        import tensorflow as tf
-        from tensorflow.keras.models import Model  # type: ignore
+    log.debug(f"molecules found: {molecules}.")
 
-        tf.config.run_functions_eagerly(True)
-        tf.data.experimental.enable_debug_mode()
+    import tensorflow as tf
+    from keras.api.models import Model, load_model
 
-        # Define the prediction function
-        @tf.function(reduce_retracing=True)
-        def predict_with_model(model, X_smiles):
-            intermediate_layer_model = Model(inputs=model.input, outputs=model.layers[-2].output)
-            # intermediate_layer_model.predict(X_smiles)
-            # TODO: Run XGBoost model here on intermediate_layer_model
-            return model.predict(X_smiles)
+    tf.config.run_functions_eagerly(True)
+    tf.data.experimental.enable_debug_mode()
+
+    # Define the prediction function
+    @tf.function(reduce_retracing=True)
+    def predict_with_model(model, X_smiles):
+        intermediate_layer_model = Model(inputs=model.input, outputs=model.layers[-2].output)
+        # intermediate_layer_model.predict(X_smiles)
+        # TODO: Run XGBoost model here on intermediate_layer_model
+        return model.predict(X_smiles)
 
     # Process each SMILES string
     for mol in molecules:
@@ -104,7 +110,8 @@ def main():
 
             if os.path.exists(model_path):
                 log.info(f"Processing model: {model_name}")
-                best_nn_model = tf.keras.models.load_model(model_path)
+
+                best_nn_model = load_model(model_path)
 
                 # # Predict intermediate features
                 # intermediate_layer_model = Model(inputs=best_nn_model.input, outputs=best_nn_model.layers[-2].output)
@@ -114,7 +121,8 @@ def main():
                 # results[smi][model_name] = {"NN Prediction": nn_predictions.flatten()[0]}
 
                 # Predict using the defined function
-                nn_predictions = predict_with_model(best_nn_model, X_smiles)
+                # log.debug(predict_with_model)  # Should print <function predict_with_model at 0x...>
+                nn_predictions = predict_with_model(best_nn_model, X_smiles)  # type: ignore
                 results[smi][model_name] = nn_predictions.flatten()[0]
 
             else:
