@@ -58,7 +58,8 @@ def main():
     # Example SMILES strings
     # smiles = ["C1=CC=CC=C1", "CC(C)C", "O=C(O)C(Br)Cl"]
 
-    models_dir = "src/efilter/models"
+    models_dir = os.path.join(os.path.dirname(__file__), "models")
+    log.info(f"Models directory: {models_dir}")
     model_files = [f for f in os.listdir(models_dir) if f.endswith(".keras")]
 
     results = {}
@@ -99,7 +100,7 @@ def main():
 
         for model_file in model_files:
             model_path = os.path.join(models_dir, model_file)
-            model_name = model_file.replace(".keras", "")
+            model_name = model_file.split("_")[-1].replace(".keras", "")
 
             if os.path.exists(model_path):
                 log.info(f"Processing model: {model_name}")
@@ -123,11 +124,11 @@ def main():
     for smi, preds in results.items():
         print(f"Predictions for SMILES {smi}:")
         for model, prediction in preds.items():
-            print(f"  {model}: {prediction}")
+            print(f"  {model.split('_')[-1]}: {prediction}")
 
-    # if len(brick_db) == len(linker_db) == len(fa_db) == 0:
-    #     log.error(f"No files were generated from {mol_files}.")
-    #     return
+    # Extract the model names from the first molecule's predictions
+    model_names = list(results[next(iter(results))].keys())
+
 
 
 if __name__ == "__main__":
