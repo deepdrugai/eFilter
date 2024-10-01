@@ -75,3 +75,6 @@ docs/_build/
 # Ignore models folder
 models/
 model_output*
+
+# Ignore papers folder
+papers/
