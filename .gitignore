@@ -71,6 +71,7 @@ docs/_build/
 # Ignore all local history of files
 .history
 .ionide
+.venv
 
 # Ignore models folder
 models/
