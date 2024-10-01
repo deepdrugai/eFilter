@@ -11,8 +11,6 @@ try:  # if colorlog is installed, get colored log files
     class CustomFormatter(colorlog.ColoredFormatter):
         def format(self, record):
             # Modify record.pathname here before calling the parent class's format method
-            # This example gets the part of the path after "eMolFrag"
-
             record.pathname = record.pathname.split(f"{curr_proj_name}/")[-1]
             return super().format(record)
 
