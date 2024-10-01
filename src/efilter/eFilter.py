@@ -3,12 +3,11 @@ from pathlib import Path
 
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
-
 
 # from rdkit.Chem import AllChem
 # from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 
+from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 
 # import tensorflow as tf  # Add this line
 
