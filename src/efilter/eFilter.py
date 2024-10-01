@@ -3,11 +3,12 @@ from pathlib import Path
 
 import numpy as np
 from rdkit import Chem
+from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
+
 
 # from rdkit.Chem import AllChem
 # from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 
-from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 
 # import tensorflow as tf  # Add this line
 
@@ -37,7 +38,7 @@ def main():
     """
     options = Options()
     # if not options.isRunnable():
-    #     log.error(f'Command-line arguments failed to parse; execution of eMolFrag will stop.')
+    #     log.error(f'Command-line arguments failed to parse; execution of eFilter will stop.')
     #     return
 
     # Get files
@@ -196,7 +197,7 @@ def getFiles(options):
 
         # Report unacceptable files
         if bad_files:
-            log.warning(f'emolFrag2 only accepts the following formats {", ".join(constants.ACCEPTED_FORMATS)}')
+            log.warning(f'eFilter only accepts the following formats {", ".join(constants.ACCEPTED_FORMATS)}')
             log.warning(f'The following files will be ignored: {", ".join([bf.name for bf in bad_files])}')
 
         return files
@@ -213,7 +214,7 @@ def getFiles(options):
 
     # Report unacceptable files
     if bad_files:
-        log.warning(f'emolFrag2 only accepts the following formats {", ".join(constants.ACCEPTED_FORMATS)}.')
+        log.warning(f'eFilter only accepts the following formats {", ".join(constants.ACCEPTED_FORMATS)}.')
         log.warning(f'The following files will be ignored: {", ".join([bf.name for bf in bad_files])}.')
 
     return files
