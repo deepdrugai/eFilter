@@ -37,7 +37,7 @@ def preprocess_data():
     properties["Value"] = properties["Value"].str.replace("<", "").str.replace(">", "")
     properties = properties[properties["Value"].str.isnumeric()]
     properties["Value"] = pd.to_numeric(properties["Value"], errors="coerce")  # Coerce errors to NaN
-    properties.dropna(subset=["Value"], inplace=True)  # Drop rows where conversion failed
+    properties.dropna(subset=["Value"], inplace=True)  # Drop rows where conversion failed  # type: ignore
 
     # Pivot the properties DataFrame to have one row per drug and one column per property type
     properties_pivot = properties.pivot_table(index="Drug ID", columns="Property Type", values="Value", aggfunc=np.mean)
