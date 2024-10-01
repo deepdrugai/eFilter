@@ -74,3 +74,4 @@ docs/_build/
 
 # Ignore models folder
 models/
+model_output*
