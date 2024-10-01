@@ -15,13 +15,13 @@ keywords = [
   "physical properties",
   "pathway prediction",
   "classification",
-  "target prediction",   # eTarget?
+  "target prediction",
   "bioinformatics",
 ]
 authors = [
   { name = "bessx", email = "1159066+bessx@users.noreply.github.com" },
   { name = "Adam Bess", email = "bess@deepdrug.ai" },
-  { name = "Chris Alvins", email = "calvin@deepdrug.ai" },
+  { name = "Chris Alvin", email = "calvin@deepdrug.ai" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
