@@ -109,8 +109,14 @@ line-ending = "auto"
 docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/efilter"]
+exclude = ["**/__pycache__", "**/*.pyc"]
+
+# [tool.hatch.build]
+# include = ["src/efilter"]
+
 # Fix dynamic vs static import issues (efilter.* vs eFilter.src.efilter.*)
 # [tool.hatch.build]
+# source = "src"
 # packages = [{ include = "efilter", from = "src" }]
-[tool.hatch.build]
-include = ["src/efilter"]
