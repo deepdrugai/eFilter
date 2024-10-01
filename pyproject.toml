@@ -38,16 +38,22 @@ classifiers = [
 ]
 dependencies = [
   "numpy<2",
+  "pandas",
+  "matplotlib",
+  "scikit-learn",
   "rdkit",
   "colorlog",
   "pytest",
   "tensorflow",
   "xgboost",
+  "pydot==1.4.2",
+  "graphviz",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov"]
-types = ["pyright"]
+types = ["pyright", "tensorflow-stubs"]
+
 
 [project.urls]
 Documentation = "https://github.com/deepdrugai/efilter#readme"
@@ -58,7 +64,7 @@ Source = "https://github.com/deepdrugai/efilter"
 path = "src/efilter/__about__.py"
 
 [tool.hatch.envs.dev]
-dependencies = ["pytest", "pytest-cov", "pyright"]
+dependencies = ["pytest", "pytest-cov", "pyright", "tensorflow-stubs"]
 [tool.hatch.envs.dev.scripts]
 typ = "pyright"
 types = "pyright --stats"
@@ -66,6 +72,11 @@ typesskip = "pyright --stats --skipunannotated"
 
 [tool.pyright]
 include = ["src/efilter", "tests"]
+typeCheckingMode = "basic"
+reportAttributeAccessIssue = false # weird issues
+useLibraryCodeForTypes = true
+reportMissingTypeStubs = false
+reportMissingImports = false
 
 [tool.coverage.run]
 source_pkgs = ["efilter", "tests"]
@@ -99,5 +110,7 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 # Fix dynamic vs static import issues (efilter.* vs eFilter.src.efilter.*)
+# [tool.hatch.build]
+# packages = [{ include = "efilter", from = "src" }]
 [tool.hatch.build]
-packages = [{ include = "efilter", from = "src" }]
+include = ["src/efilter"]
