@@ -48,6 +48,7 @@ dependencies = [
   "xgboost",
   "pydot==1.4.2",
   "graphviz",
+  "tqdm",
 ]
 
 [project.optional-dependencies]
