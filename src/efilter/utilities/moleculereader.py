@@ -101,14 +101,6 @@ def readMol2File(contents):
     # from rdkit import RDLogger
     # RDLogger.DisableLog('rdApp.*')
 
-    # 80 unique bricks among 162 bricks - 11 unique linkers among 78 linkers ||| Chem.MolFromMol2Block(contents)
-    # 81 unique bricks among 155 bricks - 10 unique linkers among 75 linkers  ||| Chem.MolFromMol2Block(contents, removeHs=False, cleanupSubstructures=False)
-    # 127 unique bricks among 249 bricks - 18 unique linkers among 129 linkers  ||| Chem.MolFromMol2Block(contents, sanitize=False)  ||  SDWriter breaks.
-    # 127 unique bricks among 249 bricks - 18 unique linkers among 129 linkers  ||| Chem.MolFromMol2Block(contents, sanitize=False, removeHs=False)  ||  SDWriter breaks.
-    # 143 unique bricks among 264 bricks - 18 unique linkers among 137 linkers  ||| Chem.MolFromMol2Block(contents, sanitize=False, removeHs=False, cleanupSubstructures=False)  ||  SDWriter breaks.
-    # 0 unique bricks among 0 bricks - 0 unique linkers among 0 linkers ||| Chem.MolFromMol2Block(contents, kekulize=False, sanitize=False)
-    # 0 unique bricks among 0 bricks - 0 unique linkers among 0 linkers ||| Chem.MolFromMol2Block(contents, kekulize=False)
-
     return (
         Chem.MolFromMol2Block(contents)  # fmt: skip
         or Chem.MolFromMol2Block(contents, removeHs=False, cleanupSubstructures=False)

@@ -67,7 +67,7 @@ def check_efilter_logfile(test_file, result):
         assert re.sub(r":\d+::", ":::", linea) == re.sub(r":\d+::", ":::", lineb)
 
     # if lines_without_timestamp:
-    #     print("Non-efitler Std Errors:")
+    #     print("Non-efilter Std Errors:")
     #     for line in lines_without_timestamp:
     #         print(line)
 
