@@ -18,7 +18,7 @@
 ## Installation
 
 ```console
-pip install efilter
+pip install "https://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@github.com/deepdrugai/eFilter.git"
 ```
 
 ## License
