@@ -6,7 +6,7 @@ from rdkit.Chem.rdmolfiles import MolFromSmarts
 # from efilter.output.Mol2Writer import _sybyl_atom_type
 from efilter.representation.Molecule import Molecule
 from efilter.utilities import constants
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 
 
 def fileToString(file):

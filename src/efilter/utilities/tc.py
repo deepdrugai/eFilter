@@ -6,7 +6,7 @@ from rdkit import (
 )
 
 from efilter.representation import Molecule
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 
 
 #

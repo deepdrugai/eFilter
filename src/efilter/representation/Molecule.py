@@ -3,7 +3,7 @@
 #
 
 from efilter.utilities import constants, tc
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 
 
 class Molecule:

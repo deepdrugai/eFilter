@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 
 
 @pytest.mark.parametrize("test_file", glob.glob("data/DB*"))
