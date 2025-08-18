@@ -12,7 +12,7 @@ from rdkit.Chem.rdMolDescriptors import GetMorganFingerprintAsBitVect
 # import tensorflow as tf  # Add this line
 
 from efilter.utilities import constants, moleculereader
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 from efilter.utilities.options import Options
 
 

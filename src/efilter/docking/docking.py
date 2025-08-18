@@ -8,7 +8,7 @@ import numpy as np
 import time
 from tqdm import tqdm
 from pathlib import Path
-from efilter.utilities.logging import log
+from efilter.utilities.log import log
 import signal
 
 
