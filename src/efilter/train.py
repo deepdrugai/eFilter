@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
+from pathlib import Path
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, roc_auc_score, roc_curve, confusion_matrix, matthews_corrcoef
@@ -15,12 +15,15 @@ from tensorflow.keras.regularizers import l2
 import tensorflow as tf
 import xgboost as xgb
 import pickle
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+FPS_PATH = DATA_DIR / "drugbankfps-str-1024.p"
+PROPS_PATH = DATA_DIR / "drugbank_properties.csv"
 
 
 def preprocess_data():
     """Load and preprocess the data."""
     # Load embeddings
-    with open(os.path.join(os.path.dirname(__file__), "drugbankfps-str-1024.p"), "rb") as f:
+    with FPS_PATH.open("rb") as f:
         embeddings = pickle.load(f)
 
     # Convert the 'fpstr' column from a string of bits to an actual list of integers
@@ -30,7 +33,7 @@ def preprocess_data():
     X = np.stack(embeddings["fpstr"].values)
 
     # Load properties
-    properties = pd.read_csv(os.path.join(os.path.dirname(__file__), "drugbank_properties.csv"))
+    properties = pd.read_csv(PROPS_PATH)
 
     # Clean and prepare the properties data
     # Remove non-numeric 'Value' entries and strip '<' and '>' from numerical values
@@ -149,11 +152,11 @@ def build_nn_model(input_shape, is_binary):
     return nn_model
 
 
-def train_nn_model(nn_model, X_train, y_train, is_binary, target_name, class_weights=None, output_dir="model_output"):
+def train_nn_model(nn_model, X_train, y_train, is_binary, target_name, class_weights, output_dir: Path):
     """Train the neural network model."""
     # Define callbacks
     checkpoint = ModelCheckpoint(
-        os.path.join(output_dir, f"best_model_{target_name}.keras"),
+        output_dir / f"best_model_{target_name}.keras",
         monitor="val_loss",
         save_best_only=True,
         save_weights_only=False,
@@ -181,7 +184,7 @@ def train_nn_model(nn_model, X_train, y_train, is_binary, target_name, class_wei
     return history
 
 
-def train_xgb_model(X_train_features, y_train, is_binary, scale_pos_weight, output_dir, target_name):
+def train_xgb_model(X_train_features, y_train, is_binary, scale_pos_weight, output_dir: Path, target_name):
     """Train XGBoost model."""
     if is_binary:
         xgb_model = xgb.XGBClassifier(
@@ -212,11 +215,16 @@ def train_xgb_model(X_train_features, y_train, is_binary, scale_pos_weight, outp
         )
     xgb_model.fit(X_train_features, y_train)
     # Save the XGBoost model
-    xgb_model.save_model(os.path.join(output_dir, f"xgb_model_{target_name}.json"))
+    # xgb_model.save_model(output_dir / f"xgb_model_{target_name}.json") # This broke in recent xgboost versions
+    xgb_model.get_booster().save_model(output_dir / f"xgb_model_{target_name}.json")
+
+    # 2) sklearn wrapper (sometimes brittle across versions)
+    joblib.dump(xgb_model, output_dir / f"xgb_sklearn_{target_name}.joblib")
+
     return xgb_model
 
 
-def plot_learning_curve(history, target_name, output_dir):
+def plot_learning_curve(history, target_name, output_dir: Path):
     """Plot and save the learning curve."""
     plt.figure(figsize=(8, 6))
     plt.plot(history.history["loss"], label="Training Loss")
@@ -226,8 +234,7 @@ def plot_learning_curve(history, target_name, output_dir):
     plt.ylabel("Loss")
     plt.legend()
     plt.grid(True)
-    plt.savefig(os.path.join(output_dir, f"learning_curve_{target_name}.png"))
-    # plt.show()
+    plt.savefig(output_dir / f"learning_curve_{target_name}.png")
 
 
 def calculate_classification_metrics(y_true, y_proba):
@@ -253,8 +260,7 @@ def calculate_classification_metrics(y_true, y_proba):
     metrics["tpr"] = tpr
     return metrics
 
-
-def plot_prediction_histogram(y_true, y_proba, threshold, model_name, target_name, output_dir):
+def plot_prediction_histogram(y_true, y_proba, threshold, model_name, target_name, output_dir: Path):
     """Plot histogram of prediction probabilities."""
     bins = np.linspace(0, 1, 50).tolist()
     plt.figure(figsize=(9, 6))
@@ -267,11 +273,11 @@ def plot_prediction_histogram(y_true, y_proba, threshold, model_name, target_nam
     plt.title(f"Prediction Distribution Histogram for {target_name} - {model_name}")
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f"histogram_{target_name}_{model_name}.png"))
+    plt.savefig(output_dir / f"histogram_{target_name}_{model_name}.png")
     # plt.show()
 
 
-def plot_roc_curves(roc_data_list, target_name, output_dir):
+def plot_roc_curves(roc_data_list, target_name, output_dir: Path):
     """Plot ROC curves for multiple models."""
     plt.figure(figsize=(9, 6))
     plt.plot([0, 1], [0, 1], color="black", lw=2, linestyle="--")
@@ -282,11 +288,10 @@ def plot_roc_curves(roc_data_list, target_name, output_dir):
     plt.title(f"ROC Curve for {target_name}")
     plt.legend(loc="lower right")
     plt.grid(True)
-    plt.savefig(os.path.join(output_dir, f"roc_curve_{target_name}.png"))
+    plt.savefig(output_dir / f"roc_curve_{target_name}.png")
     # plt.show()
 
-
-def evaluate_regression_models(y_test_col, nn_predictions, xgb_predictions, combined_predictions, target_name, output_dir):
+def evaluate_regression_models(y_test_col, nn_predictions, xgb_predictions, combined_predictions, target_name, output_dir: Path):
     """Calculate error metrics and plot results for regression."""
     # Compute error metrics
     nn_mse = mean_squared_error(y_test_col, nn_predictions)
@@ -314,7 +319,7 @@ def evaluate_regression_models(y_test_col, nn_predictions, xgb_predictions, comb
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f"scatter_plot_{target_name}.png"))
+    plt.savefig(output_dir / f"scatter_plot_{target_name}.png")
     # plt.show()
 
     # Residual Plot
@@ -332,7 +337,7 @@ def evaluate_regression_models(y_test_col, nn_predictions, xgb_predictions, comb
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f"residual_plot_{target_name}.png"))
+    plt.savefig(output_dir / f"residual_plot_{target_name}.png")
     # plt.show()
 
     return {
@@ -368,10 +373,12 @@ def save_metrics_to_file(metrics_dict, target_name, is_binary, metrics_file):
 
 def main(X_train, X_test, y_train, y_test, y_cols):
     # Create a timestamped output directory
-    output_dir = f'model_output_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = Path(f'model_output_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Open metrics file
+    metrics_file_path = output_dir / "metrics_summary.txt"
+    metrics_file = metrics_file_path.open("w")
     metrics_file_path = os.path.join(output_dir, "metrics_summary.txt")
     metrics_file = open(metrics_file_path, "w")
 
@@ -432,7 +439,7 @@ def main(X_train, X_test, y_train, y_test, y_cols):
         # Visualize the model architecture
         plot_model(
             nn_model,
-            to_file=os.path.join(output_dir, f"neural_network_structure_{target_name}.png"),
+            to_file=str(output_dir / f"neural_network_structure_{target_name}.png"),
             show_shapes=True,
             show_layer_names=True,
             expand_nested=True,
@@ -442,7 +449,7 @@ def main(X_train, X_test, y_train, y_test, y_cols):
         )
         plot_learning_curve(history, target_name, output_dir)
         # Load the best model
-        best_nn_model = load_model(os.path.join(output_dir, f"best_model_{target_name}.keras"))
+        best_nn_model = load_model(output_dir / f"best_model_{target_name}.keras")
 
         # Extract intermediate features
         intermediate_layer_model = Model(inputs=best_nn_model.input, outputs=best_nn_model.layers[-2].output)
