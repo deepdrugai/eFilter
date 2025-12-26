@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, mean_absolute_error, roc_auc_score, roc_curve, confusion_matrix, matthews_corrcoef
+from sklearn.metrics import mean_squared_error, mean_absolute_error, roc_auc_score, roc_curve, confusion_matrix, matthews_corrcoef, average_precision_score, precision_recall_curve, auc
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.layers import Input, Dense, Dropout
@@ -291,7 +291,14 @@ def calculate_classification_metrics(y_true, y_proba):
     """Calculate classification metrics for a set of predictions."""
     metrics = {}
     metrics["auc"] = roc_auc_score(y_true, y_proba)
+    metrics["pr_auc"] = average_precision_score(y_true, y_proba)
     fpr, tpr, thresholds = roc_curve(y_true, y_proba)
+    precision, recall, pr_thresholds = precision_recall_curve(y_true, y_proba)
+    metrics["fpr"] = fpr
+    metrics["tpr"] = tpr
+    metrics["precision_curve"] = precision
+    metrics["recall_curve"] = recall
+    metrics["pr_thresholds"] = pr_thresholds
     opt_idx = np.argmax(tpr - fpr)
     metrics["threshold"] = thresholds[opt_idx]
     y_pred = (y_proba >= metrics["threshold"]).astype(int)
@@ -306,8 +313,6 @@ def calculate_classification_metrics(y_true, y_proba):
         if (metrics["precision"] + metrics["recall"]) > 0
         else 0
     )
-    metrics["fpr"] = fpr
-    metrics["tpr"] = tpr
     return metrics
 
 def plot_prediction_histogram(y_true, y_proba, threshold, model_name, target_name, output_dir: Path):
@@ -340,6 +345,24 @@ def plot_roc_curves(roc_data_list, target_name, output_dir: Path):
     plt.grid(True)
     plt.savefig(output_dir / f"roc_curve_{target_name}.png")
     # plt.show()
+
+def plot_pr_curves(pr_data_list, target_name, output_dir: Path):
+    """Plot PR curves for multiple models."""
+    plt.figure(figsize=(9, 6))
+    for data in pr_data_list:
+        plt.plot(
+            data["recall"],
+            data["precision"],
+            lw=2,
+            label=f"{data['model_name']} PR-AUC = {data['pr_auc']:.3f}",
+        )
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title(f"Precision–Recall Curve for {target_name}")
+    plt.legend(loc="lower left")
+    plt.grid(True)
+    plt.savefig(output_dir / f"pr_curve_{target_name}.png")
+
 
 def evaluate_regression_models(y_test_col, nn_predictions, xgb_predictions, combined_predictions, target_name, output_dir: Path):
     """Calculate error metrics and plot results for regression."""
@@ -405,6 +428,7 @@ def save_metrics_to_file(metrics_dict, target_name, is_binary, metrics_file):
             m = metrics_dict[model_name]
             metrics_file.write(f"{model_name.upper()}:\n")
             metrics_file.write(f"  ROC AUC: {m['auc']:.4f}\n")
+            metrics_file.write(f"  PR-AUC: {m['pr_auc']:.4f}\n")
             metrics_file.write(f"  Optimal Threshold: {m['threshold']:.4f}\n")
             metrics_file.write(f"  Accuracy: {m['accuracy']:.4f}\n")
             metrics_file.write(f"  Precision: {m['precision']:.4f}\n")
@@ -429,8 +453,7 @@ def main(X_train, X_test, y_train, y_test, y_cols):
     # Open metrics file
     metrics_file_path = output_dir / "metrics_summary.txt"
     metrics_file = metrics_file_path.open("w")
-    metrics_file_path = os.path.join(output_dir, "metrics_summary.txt")
-    metrics_file = open(metrics_file_path, "w")
+
 
     # Standardize features
     X_train_scaled, X_test_scaled = standardize_features(X_train, X_test)
@@ -542,6 +565,29 @@ def main(X_train, X_test, y_train, y_test, y_cols):
                 {"fpr": combined_metrics["fpr"], "tpr": combined_metrics["tpr"], "auc": combined_metrics["auc"], "model_name": "Combined"},
             ]
             plot_roc_curves(roc_data_list, target_name, output_dir)
+
+            # Plot PR Curves
+            pr_data_list = [
+                {
+                    "recall": nn_metrics["recall_curve"],
+                    "precision": nn_metrics["precision_curve"],
+                    "pr_auc": nn_metrics["pr_auc"],
+                    "model_name": "NN",
+                },
+                {
+                    "recall": xgb_metrics["recall_curve"],
+                    "precision": xgb_metrics["precision_curve"],
+                    "pr_auc": xgb_metrics["pr_auc"],
+                    "model_name": "XGBoost",
+                },
+                {
+                    "recall": combined_metrics["recall_curve"],
+                    "precision": combined_metrics["precision_curve"],
+                    "pr_auc": combined_metrics["pr_auc"],
+                    "model_name": "Combined",
+                },
+            ]
+            plot_pr_curves(pr_data_list, target_name, output_dir)
 
             # Plot Histograms
             plot_prediction_histogram(
