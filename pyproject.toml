@@ -49,11 +49,12 @@ dependencies = [
   "pydot==1.4.2",
   "graphviz",
   "tqdm",
+  "openbabel-wheel>=3.1.1.22",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov"]
-types = ["pyright", "tensorflow-stubs"]
+types = ["pyright"]
 
 
 [project.urls]
@@ -65,7 +66,7 @@ Source = "https://github.com/deepdrugai/efilter"
 path = "src/efilter/__about__.py"
 
 [tool.hatch.envs.dev]
-dependencies = ["pytest", "pytest-cov", "pyright", "tensorflow-stubs"]
+dependencies = ["pytest", "pytest-cov", "pyright"]
 [tool.hatch.envs.dev.scripts]
 typ = "pyright"
 types = "pyright --stats"
