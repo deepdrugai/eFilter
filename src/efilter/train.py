@@ -198,7 +198,6 @@ def train_xgb_model(X_train_features, y_train, is_binary, scale_pos_weight, outp
             reg_lambda=1.0,
             scale_pos_weight=scale_pos_weight,
             random_state=42,
-            use_label_encoder=False,
             eval_metric="logloss",
         )
     else:
