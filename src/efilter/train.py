@@ -41,14 +41,25 @@ def preprocess_data():
     print("Experimental rows:", (properties["Property Category"] == "Experimental").sum())
 
     # Clean and prepare the properties data
+    v = properties["Value"].astype(str)
+
+    # strip < and >, trim whitespace
+    v = v.str.replace(r"[<>]", "", regex=True).str.strip()
+
+    # convert to numeric (handles ints, floats, negatives, sci notation); non-numeric -> NaN
+    properties["Value"] = pd.to_numeric(v, errors="coerce")
+
+    # keep only rows with a numeric value
+    properties = properties.dropna(subset=["Value"])
+
     # Remove non-numeric 'Value' entries and strip '<' and '>' from numerical values
-    properties["Value"] = properties["Value"].str.replace("<", "").str.replace(">", "")
-    properties = properties[properties["Value"].str.isnumeric()]
-    properties["Value"] = pd.to_numeric(properties["Value"], errors="coerce")  # Coerce errors to NaN
-    properties.dropna(subset=["Value"], inplace=True)  # Drop rows where conversion failed  # type: ignore
+    # properties["Value"] = properties["Value"].str.replace("<", "").str.replace(">", "")
+    # properties = properties[properties["Value"].str.isnumeric()]
+    # properties["Value"] = pd.to_numeric(properties["Value"], errors="coerce")  # Coerce errors to NaN
+    # properties.dropna(subset=["Value"], inplace=True)  # Drop rows where conversion failed  # type: ignore
 
     # Pivot the properties DataFrame to have one row per drug and one column per property type
-    properties_pivot = properties.pivot_table(index="Drug ID", columns="Property Type", values="Value", aggfunc=np.mean)
+    properties_pivot = properties.pivot_table(index="Drug ID", columns="Property Type", values="Value", aggfunc="mean", observed=False)
 
     # Join the embeddings DataFrame with the pivoted properties DataFrame
     data = embeddings.set_index("id").join(properties_pivot, how="inner")
@@ -71,10 +82,26 @@ def preprocess_data():
     # Extract features (embeddings) and labels (properties)
     X = np.array(data["fpstr"].tolist())  # Converting list of arrays into a 2D array
 
-    # Drop columns after the 11th one (with less non-NaN values)
-    dropped_cols = ["fpstr", "IUPAC Name"] + counts_df[11:].index.astype(str).to_list()
-    y = data.drop(columns=dropped_cols).values  # Assuming all other columns are now properties
-    y_cols = data.drop(columns=dropped_cols).columns.tolist()
+    # Always-drop columns
+    always_drop = ["fpstr", "IUPAC Name", "Traditional IUPAC Name"]
+
+    # Drop columns with < 80% non-NaN coverage
+    low_coverage_cols = (counts_df.loc[counts_df["Percentage Non-NaN"] < 80].index.astype(str).tolist())
+    dropped_cols = list(set(always_drop + low_coverage_cols))
+
+    dropped_df = counts_df.loc[counts_df["Percentage Non-NaN"] < 80]
+    print(f"\n\nDropping {len(dropped_df)} columns with <80% non-NaN coverage:")
+    print(dropped_df)
+
+    # Targets
+    y_df = data.drop(columns=dropped_cols)
+    y_df = y_df.apply(pd.to_numeric, errors="coerce")
+    y = y_df.values  # Assuming all other columns are now properties
+    y_cols = y_df.columns.tolist()
+
+    # # Targets
+    # y = data.drop(columns=dropped_cols).values  # Assuming all other columns are now properties
+    # y_cols = data.drop(columns=dropped_cols).columns.tolist()
 
     # Split data into training and testing
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
