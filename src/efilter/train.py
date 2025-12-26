@@ -15,6 +15,9 @@ from tensorflow.keras.regularizers import l2
 import tensorflow as tf
 import xgboost as xgb
 import pickle
+import joblib
+
+
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 FPS_PATH = DATA_DIR / "drugbankfps-str-1024.p"
 PROPS_PATH = DATA_DIR / "drugbank_properties.csv"
