@@ -37,6 +37,8 @@ def preprocess_data():
 
     # Load properties
     properties = pd.read_csv(PROPS_PATH)
+    print("Calculated rows:", (properties["Property Category"] == "Calculated").sum())
+    print("Experimental rows:", (properties["Property Category"] == "Experimental").sum())
 
     # Clean and prepare the properties data
     # Remove non-numeric 'Value' entries and strip '<' and '>' from numerical values
@@ -64,6 +66,7 @@ def preprocess_data():
 
     # Sort by Percentage Non-NaN in descending order
     counts_df = counts_df.sort_values(by="Percentage Non-NaN", ascending=False)
+    print("\n\nColumn Non-NaN Counts:\n", counts_df)
 
     # Extract features (embeddings) and labels (properties)
     X = np.array(data["fpstr"].tolist())  # Converting list of arrays into a 2D array
@@ -77,6 +80,7 @@ def preprocess_data():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Ensure correct shapes and types
+    print("\n\nData shapes after preprocessing:")
     print("X_train shape:", X_train.shape)
     print("y_train shape:", y_train.shape)
     print("X_test shape:", X_test.shape)
@@ -115,6 +119,50 @@ def preprocess_data():
     print(np.isinf(X_train).sum(), "Infs in X_train")
     print(np.isnan(y_train).sum(), "NaNs in y_train")
     print(np.isinf(y_train).sum(), "Infs in y_train")
+
+    print("\n\n")
+
+    print("\nSanity checks (properties_pivot):")
+    n_rows, n_cols = properties_pivot.shape
+    print(f"  Rows: {n_rows:,} | Columns: {n_cols:,}")
+
+    checks = {
+        "All-NaN columns": properties_pivot.isna().all().sum(),
+        "All-zero columns": (properties_pivot == 0).all().sum(),
+        "Constant columns": (properties_pivot.nunique(dropna=False) == 1).sum(),
+        "Duplicate rows": properties_pivot.duplicated().sum(),
+    }
+
+    for name, count in checks.items():
+        denom = n_cols if "columns" in name else n_rows
+        pct = 0.0 if denom == 0 else 100 * count / denom
+        print(f"  {name}: {count:,}/{denom:,} ({pct:.2f}%)")
+
+
+    print("\nSanity checks (train arrays):")
+    for label, arr in [("X_train", X_train), ("y_train", y_train)]:
+        total = arr.size
+        n_nan = np.isnan(arr).sum()
+        n_inf = np.isinf(arr).sum()
+        nan_pct = 0.0 if total == 0 else 100 * n_nan / total
+        inf_pct = 0.0 if total == 0 else 100 * n_inf / total
+        print(
+            f"  {label}: "
+            f"NaNs {n_nan:,}/{total:,} ({nan_pct:.2f}%) | "
+            f"Infs {n_inf:,}/{total:,} ({inf_pct:.2f}%)"
+        )
+
+    print("\nSanity checks (train arrays):")
+    for label, arr in [("X_train", X_train), ("y_train", y_train)]:
+        total = arr.size
+        n_nan = np.isnan(arr).sum()
+        n_inf = np.isinf(arr).sum()
+
+        print(
+            f"{label:<8} | "
+            f"  NaNs {n_nan:>6,}/{total:<10,} ({n_nan/total:.2%}) | "
+            f"  Infs {n_inf:>6,}/{total:<10,} ({n_inf/total:.2%})"
+        )
 
     return X_train, X_test, y_train, y_test, y_cols
 
