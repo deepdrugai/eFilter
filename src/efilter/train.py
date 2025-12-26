@@ -342,6 +342,20 @@ def calculate_classification_metrics(y_true, y_proba):
     )
     return metrics
 
+def descriptive_stats(y: np.ndarray) -> dict:
+    """Compute range/mean/std on an array (ignoring NaNs)."""
+    y = np.asarray(y, dtype=float)
+    y = y[~np.isnan(y)]
+    if y.size == 0:
+        return {"n": 0, "min": np.nan, "max": np.nan, "mean": np.nan, "std": np.nan}
+    return {
+        "n": int(y.size),
+        "min": float(np.min(y)),
+        "max": float(np.max(y)),
+        "mean": float(np.mean(y)),
+        "std": float(np.std(y, ddof=1)) if y.size > 1 else 0.0,
+    }
+
 def plot_prediction_histogram(y_true, y_proba, threshold, model_name, target_name, output_dir: Path):
     """Plot histogram of prediction probabilities."""
     bins = np.linspace(0, 1, 50).tolist()
@@ -481,6 +495,11 @@ def main(X_train, X_test, y_train, y_test, y_cols):
     metrics_file_path = output_dir / "metrics_summary.txt"
     metrics_file = metrics_file_path.open("w")
 
+    # Open Appendix stats file
+    appendix_stats_path = output_dir / "appendix_target_descriptive_stats.csv"
+    appendix_rows = []
+    metrics_csv_path = output_dir / "metrics_summary.csv"
+    metrics_rows = []
 
     # Standardize features
     X_train_scaled, X_test_scaled = standardize_features(X_train, X_test)
@@ -574,6 +593,26 @@ def main(X_train, X_test, y_train, y_test, y_cols):
         nn_predictions_scaled = best_nn_model.predict(X_test_col)
 
         if is_binary:
+            # Calculate Appendix Statistics and Class Balance
+            pos_train = int(np.sum(y_train_col == 1))
+            neg_train = int(np.sum(y_train_col == 0))
+            pos_test = int(np.sum(y_test_col == 1))
+            neg_test = int(np.sum(y_test_col == 0))
+            appendix_rows.append(
+                {
+                    "target": target_name,
+                    "task": "binary",
+                    "train_n": int(len(y_train_col)),
+                    "test_n": int(len(y_test_col)),
+                    "train_pos": pos_train,
+                    "train_neg": neg_train,
+                    "test_pos": pos_test,
+                    "test_neg": neg_test,
+                    "train_pos_frac": pos_train / max(pos_train + neg_train, 1),
+                    "test_pos_frac": pos_test / max(pos_test + neg_test, 1),
+                }
+            )
+
             # Classification evaluation
             y_test_col_int = y_test_col.astype(int)
             nn_predictions_proba = nn_predictions_scaled.flatten()
@@ -631,12 +670,52 @@ def main(X_train, X_test, y_train, y_test, y_cols):
             # Save metrics
             save_metrics_to_file(metrics_dict, target_name, is_binary, metrics_file)
 
+            for model_name, model_metrics in metrics_dict.items():
+                metrics_rows.append(
+                    {
+                        "target": target_name,
+                        "task": "binary",
+                        "model": model_name,
+                        "auc": model_metrics["auc"],
+                        "pr_auc": model_metrics["pr_auc"],
+                        "threshold": model_metrics["threshold"],
+                        "accuracy": model_metrics["accuracy"],
+                        "precision": model_metrics["precision"],
+                        "recall": model_metrics["recall"],
+                        "f1": model_metrics["f1"],
+                        "mcc": model_metrics["mcc"],
+                        "mse": np.nan,
+                        "rmse": np.nan,
+                        "mae": np.nan,
+                    }
+                )
+
             # Store scores
             nn_scores[col_index] = nn_metrics
             xgb_scores[col_index] = xgb_metrics
             combined_scores[col_index] = combined_metrics
 
         else:
+            # Calculate Appendix Statistics
+            train_stats = descriptive_stats(y_train_col)
+            test_stats = descriptive_stats(y_test_col)
+            appendix_rows.append(
+                {
+                    "target": target_name,
+                    "task": "regression",
+                    "train_n": train_stats["n"],
+                    "train_min": train_stats["min"],
+                    "train_max": train_stats["max"],
+                    "train_mean": train_stats["mean"],
+                    "train_std": train_stats["std"],
+                    "test_n": test_stats["n"],
+                    "test_min": test_stats["min"],
+                    "test_max": test_stats["max"],
+                    "test_mean": test_stats["mean"],
+                    "test_std": test_stats["std"],
+                }
+            )
+
             # Regression evaluation
             y_test_col = y_test_col.flatten()
             nn_predictions = y_scaler.inverse_transform(nn_predictions_scaled).flatten()
@@ -650,6 +729,26 @@ def main(X_train, X_test, y_train, y_test, y_cols):
             # Save metrics
             save_metrics_to_file(metrics_dict, target_name, is_binary, metrics_file)
 
+            for model_name, model_metrics in metrics_dict.items():
+                metrics_rows.append(
+                    {
+                        "target": target_name,
+                        "task": "regression",
+                        "model": model_name,
+                        "auc": np.nan,
+                        "pr_auc": np.nan,
+                        "threshold": np.nan,
+                        "accuracy": np.nan,
+                        "precision": np.nan,
+                        "recall": np.nan,
+                        "f1": np.nan,
+                        "mcc": np.nan,
+                        "mse": model_metrics["mse"],
+                        "rmse": model_metrics["rmse"],
+                        "mae": model_metrics["mae"],
+                    }
+                )
+
             # Store scores
             nn_scores[col_index] = metrics_dict["nn"]
             xgb_scores[col_index] = metrics_dict["xgb"]
@@ -657,6 +756,14 @@ def main(X_train, X_test, y_train, y_test, y_cols):
 
     # Close the metrics file
     metrics_file.close()
+
+    # Save appendix descriptive stats
+    if appendix_rows:
+        pd.DataFrame(appendix_rows).to_csv(appendix_stats_path, index=False)
+
+    # Save metrics summary csv
+    if metrics_rows:
+        pd.DataFrame(metrics_rows).to_csv(metrics_csv_path, index=False)
 
     # After processing all targets, print summary
     print("Summary of Model Performance:")
