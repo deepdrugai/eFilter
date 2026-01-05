@@ -89,10 +89,9 @@ def preprocess_data():
     low_coverage_cols = (counts_df.loc[counts_df["Percentage Non-NaN"] < 80].index.astype(str).tolist())
     dropped_cols = list(set(always_drop + low_coverage_cols))
 
-    # Temporary single-target run: comment out to restore all targets
-    # only_target = "caco2 Permeability"
-    if only_target:
-        dropped_cols = [col for col in data.columns if col not in only_target]
+    # Temporary single-target run: uncomment to run only a specific target
+    # only_target = ["caco2 Permeability"]
+    # dropped_cols = [col for col in data.columns if col not in only_target]
 
     dropped_df = counts_df.loc[counts_df["Percentage Non-NaN"] < 80]
     print(f"\n\nDropping {len(dropped_df)} columns with <80% non-NaN coverage:")
